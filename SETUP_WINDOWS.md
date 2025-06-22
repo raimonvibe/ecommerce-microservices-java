@@ -178,7 +178,7 @@ The microservices need SQL Server for data storage and Redis for session managem
 ```powershell
 # Start SQL Server container (this may take a few minutes to download the first time)
 # ⚠️ SECURITY WARNING: Change the default password in production!
-$SA_PASSWORD = "YourSecurePassword123!"  # REPLACE with your own secure password
+$SA_PASSWORD = "Test1234!"  # REPLACE with your own secure password
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$SA_PASSWORD" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2019-latest
 
 # Verify the container is running
