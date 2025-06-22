@@ -1,6 +1,8 @@
-# RainbowForest E-commerce Microservices Platform
+# RainbowForest E-commerce Microservices Platform - Ubuntu/Debian Setup
 
 A complete Spring Boot microservices-based e-commerce platform with service discovery, API gateway, and distributed session management.
+
+**🐧 This guide is specifically for Ubuntu/Debian Linux systems. For Windows setup, see [SETUP_WINDOWS.md](SETUP_WINDOWS.md).**
 
 ## 🏗️ Architecture Overview
 
@@ -13,9 +15,9 @@ This platform consists of 6 microservices that work together to provide a comple
 - **Product Recommendation Service** (Port 8812) - Product recommendations (suggests products to users)
 - **Order Service** (Port 8813) - Shopping cart and order management (handles purchases and orders)
 
-## 📋 Prerequisites - Complete Installation Guide
+## 📋 Prerequisites - Complete Installation Guide for Ubuntu/Debian
 
-**⚠️ Important**: This guide assumes you're starting with a fresh Ubuntu/Debian system. If you're using Windows or macOS, some commands may differ.
+**🐧 Ubuntu/Debian Systems Only**: This guide is designed for Ubuntu 18.04+ and Debian 10+ systems. Commands use `apt` package manager.
 
 ### Step 1: Install Java 11
 
