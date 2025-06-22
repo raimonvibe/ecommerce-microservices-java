@@ -1,3 +1,11 @@
+## 📦 Based On
+
+This project is based on and contains code from [RainbowForest/e-commerce-microservices](https://github.com/RainbowForest/e-commerce-microservices).  
+Credit for the original architecture and source files goes to [@RainbowForest](https://github.com/RainbowForest).
+
+> This fork includes custom modifications, extensions, and environment-specific adjustments made by [@raimonvibe](https://github.com/raimonvibe).
+
+
 # REST Microservices architecture for E-commerce
 
 > Implementation of a REST Microservices in an E-Commerce with Spring boot, Cloud and multiple modules.                
