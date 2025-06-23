@@ -11,6 +11,7 @@ const navItems = [
   { href: '/recommendations', label: 'Reviews', icon: Star },
   { href: '/cart', label: 'Cart', icon: ShoppingCart },
   { href: '/profile', label: 'Profile', icon: User },
+  { href: '/admin', label: 'Admin', icon: User },
 ];
 
 export default function Navigation() {
