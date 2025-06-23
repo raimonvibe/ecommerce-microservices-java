@@ -94,6 +94,17 @@ docker run hello-world
 
 ### Step 4: Install Git
 
+Git is needed to clone the repository.
+
+```bash
+# Install Git
+sudo apt install -y git
+
+# Verify installation
+git --version
+# Should show Git version
+```
+
 ## 🗄️ Database Schema Setup
 
 After starting SQL Server, the microservices will automatically create required tables using Hibernate DDL auto-update. However, ensure proper database connections:
@@ -133,31 +144,12 @@ docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "T
 docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT name FROM sys.databases;"
 ```
 
-## 🗄️ Database Population & Test Data Setup
 
-### Critical Step: Populate Test Data
 
-The microservices require interconnected test data to function properly. **Without this data, the Product Recommendation Service will return HTTP 404 errors** because recommendation algorithms need user interaction history.
 
-#### Step 1: Populate Users Database
-```bash
-# Add user roles
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
-USE users;
-INSERT INTO user_role (role_name) VALUES 
-('USER'), ('ADMIN'), ('PREMIUM_USER');
-"
 
-# Add user details
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
-USE users;
-INSERT INTO users_details (first_name, last_name, email, phone_number, street, street_number, zip_code, locality, country) VALUES
-('John', 'Doe', 'john.doe@email.com', '+1234567890', 'Main Street', '123', '12345', 'New York', 'USA'),
-('Jane', 'Smith', 'jane.smith@email.com', '+1234567891', 'Oak Avenue', '456', '12346', 'Los Angeles', 'USA'),
-('Mike', 'Johnson', 'mike.johnson@email.com', '+1234567892', 'Pine Road', '789', '12347', 'Chicago', 'USA'),
-('Sarah', 'Wilson', 'sarah.wilson@email.com', '+1234567893', 'Elm Street', '321', '12348', 'Houston', 'USA'),
-('David', 'Brown', 'david.brown@email.com', '+1234567894', 'Maple Drive', '654', '12349', 'Phoenix', 'USA');
-"
+
+
 
 # Add users
 docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
@@ -744,6 +736,137 @@ sleep 90
 
 echo "✅ API Gateway should be ready!"
 ```
+
+## 🗄️ Database Population & Test Data Setup
+
+### Critical Step: Populate Test Data
+
+The microservices require interconnected test data to function properly. **Without this data, the Product Recommendation Service will return HTTP 404 errors** because recommendation algorithms need user interaction history.
+
+#### Step 1: Populate Users Database
+```bash
+# Add user roles
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+INSERT INTO user_role (role_name) VALUES 
+('USER'), ('ADMIN'), ('PREMIUM_USER');
+"
+
+# Add user details
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+INSERT INTO users_details (first_name, last_name, email, phone_number, street, street_number, zip_code, locality, country) VALUES
+('John', 'Doe', 'john.doe@email.com', '+1234567890', 'Main Street', '123', '12345', 'New York', 'USA'),
+('Jane', 'Smith', 'jane.smith@email.com', '+1234567891', 'Oak Avenue', '456', '12346', 'Los Angeles', 'USA'),
+('Mike', 'Johnson', 'mike.johnson@email.com', '+1234567892', 'Pine Road', '789', '12347', 'Chicago', 'USA'),
+('Sarah', 'Wilson', 'sarah.wilson@email.com', '+1234567893', 'Elm Street', '321', '12348', 'Houston', 'USA'),
+('David', 'Brown', 'david.brown@email.com', '+1234567894', 'Maple Drive', '654', '12349', 'Phoenix', 'USA');
+"
+
+# Add users
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+INSERT INTO users (user_name, user_password, active, user_details_id, role_id) VALUES
+('johndoe', '\$2a\$10\$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.', 1, 1, 1),
+('janesmith', '\$2a\$10\$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.', 1, 2, 1),
+('mikejohnson', '\$2a\$10\$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.', 1, 3, 1),
+('sarahwilson', '\$2a\$10\$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.', 1, 4, 2),
+('davidbrown', '\$2a\$10\$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.', 1, 5, 3);
+"
+```
+
+#### Step 2: Populate Products Database
+```bash
+# Add product categories
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE products;
+INSERT INTO product_category (category_name, category_description, category_image_url) VALUES
+('Electronics', 'Electronic devices and gadgets', 'https://example.com/electronics.jpg'),
+('Clothing', 'Fashion and apparel', 'https://example.com/clothing.jpg'),
+('Books', 'Books and literature', 'https://example.com/books.jpg'),
+('Home & Garden', 'Home improvement and gardening', 'https://example.com/home.jpg'),
+('Sports', 'Sports and fitness equipment', 'https://example.com/sports.jpg');
+"
+
+# Add products
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE products;
+INSERT INTO product (product_name, product_description, product_price, product_quantity, product_image_url, category_id) VALUES
+('Smartphone', 'Latest Android smartphone with 128GB storage', 599.99, 50, 'https://example.com/smartphone.jpg', 1),
+('Laptop', 'High-performance laptop for gaming and work', 1299.99, 25, 'https://example.com/laptop.jpg', 1),
+('T-Shirt', 'Comfortable cotton t-shirt', 19.99, 100, 'https://example.com/tshirt.jpg', 2),
+('Jeans', 'Classic blue denim jeans', 49.99, 75, 'https://example.com/jeans.jpg', 2),
+('Programming Book', 'Learn Java programming', 39.99, 30, 'https://example.com/java-book.jpg', 3),
+('Fiction Novel', 'Bestselling fiction novel', 14.99, 60, 'https://example.com/novel.jpg', 3),
+('Garden Tools', 'Complete gardening tool set', 89.99, 20, 'https://example.com/garden-tools.jpg', 4),
+('Running Shoes', 'Professional running shoes', 129.99, 40, 'https://example.com/running-shoes.jpg', 5);
+"
+```
+
+#### Step 3: Populate Recommendations Database
+```bash
+# Add user interactions (views, purchases) for recommendation algorithm
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations;
+INSERT INTO user_interaction (user_id, product_id, interaction_type, interaction_score, interaction_date) VALUES
+(1, 1, 'VIEW', 1.0, GETDATE()),
+(1, 2, 'VIEW', 1.0, GETDATE()),
+(1, 1, 'PURCHASE', 5.0, GETDATE()),
+(2, 3, 'VIEW', 1.0, GETDATE()),
+(2, 4, 'VIEW', 1.0, GETDATE()),
+(2, 3, 'PURCHASE', 5.0, GETDATE()),
+(3, 5, 'VIEW', 1.0, GETDATE()),
+(3, 6, 'VIEW', 1.0, GETDATE()),
+(4, 7, 'VIEW', 1.0, GETDATE()),
+(4, 8, 'VIEW', 1.0, GETDATE()),
+(5, 1, 'VIEW', 1.0, GETDATE()),
+(5, 2, 'VIEW', 1.0, GETDATE());
+"
+
+# Add product similarities for collaborative filtering
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations;
+INSERT INTO product_similarity (product_id_1, product_id_2, similarity_score) VALUES
+(1, 2, 0.8),
+(2, 1, 0.8),
+(3, 4, 0.9),
+(4, 3, 0.9),
+(5, 6, 0.7),
+(6, 5, 0.7),
+(7, 8, 0.6),
+(8, 7, 0.6);
+"
+```
+
+#### Step 4: Verify Data Population
+```bash
+# Check users database
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+SELECT COUNT(*) as user_count FROM users;
+SELECT COUNT(*) as role_count FROM user_role;
+SELECT COUNT(*) as details_count FROM users_details;
+"
+
+# Check products database
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE products;
+SELECT COUNT(*) as product_count FROM product;
+SELECT COUNT(*) as category_count FROM product_category;
+"
+
+# Check recommendations database
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations;
+SELECT COUNT(*) as interaction_count FROM user_interaction;
+SELECT COUNT(*) as similarity_count FROM product_similarity;
+"
+```
+
+**Expected Results:**
+- Users: 5 users, 3 roles, 5 user details
+- Products: 8 products, 5 categories  
+- Recommendations: 12 interactions, 8 similarities
 
 ### Step 6: Complete System Verification
 
