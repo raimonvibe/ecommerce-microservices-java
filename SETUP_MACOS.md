@@ -87,6 +87,111 @@ echo $JAVA_HOME
 
 Maven is the build tool used to compile and run the microservices.
 
+## 🗄️ Database Schema Setup
+
+After starting SQL Server, the microservices will automatically create required tables using Hibernate DDL auto-update. However, ensure proper database connections:
+
+### Required Databases
+- `users` - User management and authentication data
+- `products` - Product catalog and inventory
+- `recommendations` - Product recommendation data  
+- `orders` - Shopping cart and order data
+
+### Database Connection Verification
+```bash
+# Connect to SQL Server and verify databases exist
+docker exec -it sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Test1234!'
+SELECT name FROM sys.databases;
+GO
+```
+
+## 🧪 API Testing & Verification
+
+Test all endpoints after setup:
+
+### User Registration (Fixed Field Mapping)
+```bash
+# ✅ CORRECT - Use userName, userPassword, active fields
+curl -X POST http://localhost:8900/api/accounts/registration \
+  -H "Content-Type: application/json" \
+  -d '{"userName":"testuser","userPassword":"password123","active":1}'
+
+# ❌ INCORRECT - Don't use username, email, password fields
+```
+
+### Product Catalog
+```bash
+# Get all products
+curl -X GET http://localhost:8900/api/catalog/products
+
+# Get products by category
+curl -X GET "http://localhost:8900/api/catalog/products?category=electronics"
+
+# Get product by ID
+curl -X GET http://localhost:8900/api/catalog/products/1
+```
+
+### Product Recommendations (Requires name parameter)
+```bash
+# ✅ CORRECT - Include name parameter
+curl -X GET "http://localhost:8900/api/review/recommendations?name=laptop"
+
+# ❌ INCORRECT - Missing name parameter returns HTTP 400
+curl -X GET "http://localhost:8900/api/review/recommendations"
+```
+
+### Shopping Cart & Orders
+```bash
+# Get cart (requires Cookie header)
+curl -X GET http://localhost:8900/api/shop/cart \
+  -H "Cookie: JSESSIONID=your-session-id"
+
+# Add item to cart
+curl -X POST "http://localhost:8900/api/shop/cart?productId=1&quantity=2" \
+  -H "Cookie: JSESSIONID=your-session-id"
+```
+
+## 🔧 Common Issues & Solutions
+
+### HTTP 500 User Registration
+**Problem**: "Cannot insert the value NULL into column 'user_name'"
+**Solution**: Use correct JSON field names: `userName`, `userPassword`, `active`
+
+### HTTP 400 Product Recommendations  
+**Problem**: "Required String parameter 'name' is not present"
+**Solution**: Always include `?name=productName` parameter
+
+### HTTP 404 API Endpoints
+**Problem**: Service registered with Eureka but endpoints return 404
+**Solution**: 
+1. Check service logs for component scanning issues
+2. Verify service is accessible directly on its port
+3. Check API Gateway routing configuration
+4. Restart the specific microservice if needed
+
+### Database Connection Issues
+**Problem**: Services fail to start with database connection errors
+**Solution**:
+1. Ensure SQL Server container is running: `docker ps`
+2. Verify database credentials in application.properties
+3. Check if required databases exist in SQL Server
+4. Restart services after database issues are resolved
+
+### Port Conflicts
+**Problem**: "Port already in use" errors
+**Solution**:
+1. Check running processes: `lsof -i :PORT`
+2. Kill conflicting processes: `kill -9 PID`
+3. Update port configurations in application.properties files
+
+### Homebrew Permission Issues
+**Problem**: Permission denied when installing packages
+**Solution**:
+```bash
+sudo chown -R $(whoami) /usr/local/var/homebrew
+```
+
+
 ```bash
 # Install Maven using Homebrew
 brew install maven

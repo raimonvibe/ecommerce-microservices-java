@@ -87,6 +87,111 @@ refreshenv
 mvn -version
 ```
 
+## 🗄️ Database Schema Setup
+
+After starting SQL Server, the microservices will automatically create required tables using Hibernate DDL auto-update. However, ensure proper database connections:
+
+### Required Databases
+- `users` - User management and authentication data
+- `products` - Product catalog and inventory
+- `recommendations` - Product recommendation data  
+- `orders` - Shopping cart and order data
+
+### Database Connection Verification
+```powershell
+# Connect to SQL Server and verify databases exist
+docker exec -it sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Test1234!'
+# Then run: SELECT name FROM sys.databases; GO
+```
+
+## 🧪 API Testing & Verification
+
+Test all endpoints after setup using PowerShell:
+
+### User Registration (Fixed Field Mapping)
+```powershell
+# ✅ CORRECT - Use userName, userPassword, active fields
+Invoke-RestMethod -Uri "http://localhost:8900/api/accounts/registration" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"userName":"testuser","userPassword":"password123","active":1}'
+
+# ❌ INCORRECT - Don't use username, email, password fields
+```
+
+### Product Catalog
+```powershell
+# Get all products
+Invoke-RestMethod -Uri "http://localhost:8900/api/catalog/products" -Method GET
+
+# Get products by category
+Invoke-RestMethod -Uri "http://localhost:8900/api/catalog/products?category=electronics" -Method GET
+
+# Get product by ID
+Invoke-RestMethod -Uri "http://localhost:8900/api/catalog/products/1" -Method GET
+```
+
+### Product Recommendations (Requires name parameter)
+```powershell
+# ✅ CORRECT - Include name parameter
+Invoke-RestMethod -Uri "http://localhost:8900/api/review/recommendations?name=laptop" -Method GET
+
+# ❌ INCORRECT - Missing name parameter returns HTTP 400
+Invoke-RestMethod -Uri "http://localhost:8900/api/review/recommendations" -Method GET
+```
+
+### Shopping Cart & Orders
+```powershell
+# Get cart (requires Cookie header)
+$headers = @{ "Cookie" = "JSESSIONID=your-session-id" }
+Invoke-RestMethod -Uri "http://localhost:8900/api/shop/cart" -Method GET -Headers $headers
+
+# Add item to cart
+Invoke-RestMethod -Uri "http://localhost:8900/api/shop/cart?productId=1&quantity=2" `
+  -Method POST -Headers $headers
+```
+
+## 🔧 Common Issues & Solutions
+
+### HTTP 500 User Registration
+**Problem**: "Cannot insert the value NULL into column 'user_name'"
+**Solution**: Use correct JSON field names: `userName`, `userPassword`, `active`
+
+### HTTP 400 Product Recommendations  
+**Problem**: "Required String parameter 'name' is not present"
+**Solution**: Always include `?name=productName` parameter
+
+### HTTP 404 API Endpoints
+**Problem**: Service registered with Eureka but endpoints return 404
+**Solution**: 
+1. Check service logs for component scanning issues
+2. Verify service is accessible directly on its port
+3. Check API Gateway routing configuration
+4. Restart the specific microservice if needed
+
+### Database Connection Issues
+**Problem**: Services fail to start with database connection errors
+**Solution**:
+1. Ensure SQL Server container is running: `docker ps`
+2. Verify database credentials in application.properties
+3. Check if required databases exist in SQL Server
+4. Restart services after database issues are resolved
+
+### Port Conflicts
+**Problem**: "Port already in use" errors
+**Solution**:
+1. Check running processes: `netstat -an | findstr :PORT`
+2. Kill conflicting processes using Task Manager or `taskkill`
+3. Update port configurations in application.properties files
+
+### PowerShell Execution Policy Issues
+**Problem**: Scripts cannot be executed due to execution policy
+**Solution**:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+
 ### Step 4: Install Docker Desktop
 
 Docker Desktop is used to run SQL Server and Redis databases on Windows.

@@ -20,7 +20,7 @@ public class AdminProductController {
     private HeaderGenerator headerGenerator;
 
     @PostMapping(value = "/products")
-    private ResponseEntity<Product> addProduct(@RequestBody Product product, HttpServletRequest request){
+    public ResponseEntity<Product> addProduct(@RequestBody Product product, HttpServletRequest request){
     	if(product != null) {
     		try {
     			productService.addProduct(product);
@@ -41,7 +41,7 @@ public class AdminProductController {
     }
     
     @DeleteMapping(value = "/products/{id}")
-    private ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id){
+    public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id){
     	Product product = productService.getProductById(id);
     	if(product != null) {
     		try {
