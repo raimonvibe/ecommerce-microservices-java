@@ -48,7 +48,7 @@ echo $JAVA_HOME
 
 ### Step 2: Install Maven
 
-Maven is the build tool used to compile and run the microservices.
+Maven is the build tool used to compile and run the microservices. **Maven 3.6.3+ is required**.
 
 ```bash
 # Install Maven
@@ -56,7 +56,14 @@ sudo apt install -y maven
 
 # Verify installation
 mvn -version
-# Should show Maven version 3.6+ and Java 11
+# Should show Maven version 3.6.3+ and Java 11
+
+# If Maven version is too old, install manually:
+# wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+# sudo tar xzf apache-maven-3.6.3-bin.tar.gz -C /opt
+# sudo ln -s /opt/apache-maven-3.6.3 /opt/maven
+# echo 'export PATH=/opt/maven/bin:$PATH' >> ~/.bashrc
+# source ~/.bashrc
 ```
 
 ### Step 3: Install Docker
@@ -97,12 +104,33 @@ After starting SQL Server, the microservices will automatically create required 
 - `recommendations` - Product recommendation data  
 - `orders` - Shopping cart and order data
 
+### Database Creation (Critical Step)
+
+**⚠️ IMPORTANT**: You must create the required databases before starting the microservices, or they will fail to start with connection errors.
+
+```bash
+# Start SQL Server container first
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Test1234!" \
+  -p 1433:1433 --name sqlserver --hostname sqlserver \
+  -d mcr.microsoft.com/mssql/server:2019-latest
+
+# Start Redis container
+docker run --name redis -p 6379:6379 -d redis:alpine
+
+# Wait for SQL Server to be ready (about 30 seconds)
+sleep 30
+
+# Create all required databases
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE users;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE products;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE recommendations;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE orders;"
+```
+
 ### Database Connection Verification
 ```bash
 # Connect to SQL Server and verify databases exist
-docker exec -it sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Test1234!'
-SELECT name FROM sys.databases;
-GO
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT name FROM sys.databases;"
 ```
 
 ## 🧪 API Testing & Verification
@@ -200,6 +228,95 @@ git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
+## 🚀 Complete Setup Process
+
+### Step 1: Clone the Repository
+```bash
+# Clone the project
+git clone https://github.com/raimonvibe/ecommerce-microservices-java.git
+cd ecommerce-microservices-java
+```
+
+### Step 2: Start Infrastructure (Docker Containers)
+```bash
+# Start SQL Server container
+# Use the same password variable set earlier
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$SA_PASSWORD" \
+  -p 1433:1433 --name sqlserver --hostname sqlserver \
+  -d mcr.microsoft.com/mssql/server:2019-latest
+
+# Start Redis container  
+docker run --name redis -p 6379:6379 -d redis:alpine
+
+# Wait for SQL Server to be ready
+sleep 30
+
+# Create required databases
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE users;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE products;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE recommendations;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE orders;"
+```
+
+### Step 3: Build All Microservices
+```bash
+# Build all services (this may take several minutes)
+mvn clean install -DskipTests
+
+# Or build individually if needed:
+# cd eureka-server && mvn clean install -DskipTests && cd ..
+# cd user-service && mvn clean install -DskipTests && cd ..
+# cd product-catalog-service && mvn clean install -DskipTests && cd ..
+# cd product-recommendation-service && mvn clean install -DskipTests && cd ..
+# cd api-gateway && mvn clean install -DskipTests && cd ..
+```
+
+### Step 4: Start Services in Correct Order
+
+**⚠️ CRITICAL**: Services must be started in this exact order due to dependencies:
+
+```bash
+# 1. Start Eureka Server (Service Registry) - FIRST
+cd eureka-server
+java -jar target/eureka-server-0.0.1-SNAPSHOT.jar &
+cd ..
+
+# Wait for Eureka to start (about 30 seconds)
+sleep 30
+
+# 2. Start User Service
+cd user-service  
+java -jar target/user-service-0.0.1-SNAPSHOT.jar &
+cd ..
+
+# 3. Start Product Catalog Service
+cd product-catalog-service
+java -jar target/product-catalog-service-0.0.1-SNAPSHOT.jar &
+cd ..
+
+# 4. Start Product Recommendation Service
+cd product-recommendation-service
+java -jar target/product-recommendation-service-0.0.1-SNAPSHOT.jar &
+cd ..
+
+# 5. Start API Gateway - LAST
+cd api-gateway
+java -jar target/api-gateway-0.0.1-SNAPSHOT.jar &
+cd ..
+```
+
+### Step 5: Verify Setup
+```bash
+# Check Eureka Dashboard (should show all services registered)
+curl http://localhost:8761
+
+# Test API Gateway health
+curl http://localhost:8900/actuator/health
+
+# Test a sample API endpoint
+curl "http://localhost:8900/api/catalog/products"
+```
+
 ### ✅ Prerequisites Verification
 
 Before proceeding, verify all tools are installed correctly:
@@ -254,7 +371,7 @@ The microservices need SQL Server for data storage and Redis for session managem
 
 ```bash
 # Start SQL Server container (this may take a few minutes to download the first time)
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Test1234!" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2019-latest
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$SA_PASSWORD" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2019-latest
 
 # Verify the container is running
 docker ps | grep sqlserver
@@ -275,7 +392,7 @@ echo "Waiting for SQL Server to start completely..."
 sleep 30
 
 # Create all required databases
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Test1234! -C -Q "
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "
 CREATE DATABASE users;
 CREATE DATABASE product_catalog;
 CREATE DATABASE product_recommendations;
@@ -283,7 +400,7 @@ CREATE DATABASE orders;
 "
 
 # Verify databases were created successfully
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Test1234! -C -Q "SELECT name FROM sys.databases WHERE name IN ('users', 'product_catalog', 'product_recommendations', 'orders');"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "SELECT name FROM sys.databases WHERE name IN ('users', 'product_catalog', 'product_recommendations', 'orders');"
 # You should see all 4 database names listed
 ```
 
@@ -313,7 +430,7 @@ echo "=== Infrastructure Status Check ==="
 echo "Docker containers:"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo -e "\nSQL Server databases:"
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Test1234! -C -Q "SELECT name FROM sys.databases WHERE name IN ('users', 'product_catalog', 'product_recommendations', 'orders');"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "SELECT name FROM sys.databases WHERE name IN ('users', 'product_catalog', 'product_recommendations', 'orders');"
 echo -e "\nRedis connection:"
 docker exec -it redis redis-cli ping
 echo "=== Infrastructure should be ready ==="
@@ -814,7 +931,7 @@ docker restart redis
 
 # Test connections
 echo "Testing SQL Server connection..."
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Test1234! -C -Q "SELECT 1"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "SELECT 1"
 
 echo "Testing Redis connection..."
 docker exec -it redis redis-cli ping

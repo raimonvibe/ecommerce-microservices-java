@@ -97,11 +97,22 @@ After starting SQL Server, the microservices will automatically create required 
 - `recommendations` - Product recommendation data  
 - `orders` - Shopping cart and order data
 
+### Database Creation (Critical Step)
+
+**⚠️ IMPORTANT**: You must create the required databases before starting the microservices, or they will fail to start with connection errors.
+
+```powershell
+# Create all required databases
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE users;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE products;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE recommendations;"
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "CREATE DATABASE orders;"
+```
+
 ### Database Connection Verification
 ```powershell
 # Connect to SQL Server and verify databases exist
-docker exec -it sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Test1234!'
-# Then run: SELECT name FROM sys.databases; GO
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "SELECT name FROM sys.databases;"
 ```
 
 ## 🧪 API Testing & Verification
