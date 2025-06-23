@@ -1,6 +1,6 @@
 # 🌟 RainbowForest Frontend Setup Guide
 
-![RainbowForest Frontend](localhost_3000_071831.png)
+![RainbowForest Frontend](frontend.png)
 
 *Professional dark mode e-commerce frontend with sparkling background effects*
 
