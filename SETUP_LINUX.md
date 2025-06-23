@@ -105,9 +105,11 @@ git --version
 # Should show Git version
 ```
 
-## 🗄️ Database Schema Setup
+## 🗄️ Database Setup (Critical Step)
 
-After starting SQL Server, the microservices will automatically create required tables using Hibernate DDL auto-update. However, ensure proper database connections:
+**⚠️ IMPORTANT**: You must create the required databases BEFORE starting any microservices, or they will fail to start with connection errors.
+
+After starting SQL Server, the microservices will automatically create required tables using Hibernate DDL auto-update. However, you must first create the databases:
 
 ### Required Databases
 - `users` - User management and authentication data
@@ -658,11 +660,15 @@ echo "=== Build verification complete ==="
 
 ### Step 5: Start All Microservices (Critical Order!)
 
+**⚠️ CRITICAL PREREQUISITE**: Before proceeding with service startup, you MUST have completed the **🗄️ Database Setup (Critical Step)** section above. All microservices will fail to start without the required databases (users, products, recommendations, orders).
+
 **⚠️ VERY IMPORTANT**: You MUST start services in this exact order! Each service depends on the previous ones being ready.
 
 **What happens**: Each service will start, connect to the databases, and register itself with Eureka. This process takes about 30-60 seconds per service.
 
 #### 5.1 Start Eureka Server (Service Registry) - FIRST!
+
+**⚠️ PREREQUISITE**: Before starting ANY services, ensure you have completed the **Database Setup** section above. All services will fail without the required databases.
 
 **What this does**: Starts the service registry that all other services will register with. This MUST start first.
 
