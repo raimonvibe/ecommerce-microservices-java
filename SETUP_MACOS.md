@@ -224,6 +224,156 @@ After starting SQL Server, the microservices will automatically create required 
 docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "SELECT name FROM sys.databases;"
 ```
 
+## 🗄️ Database Population & Test Data Setup
+
+### Critical Step: Populate Test Data
+
+The microservices require interconnected test data to function properly. **Without this data, the Product Recommendation Service will return HTTP 404 errors** because recommendation algorithms need user interaction history.
+
+#### Step 1: Populate Users Database
+```bash
+# Add user roles
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+INSERT INTO user_role (role_name) VALUES 
+('USER'), ('ADMIN'), ('PREMIUM_USER');
+"
+
+# Add user details
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+INSERT INTO users_details (first_name, last_name, email, phone_number, street, street_number, zip_code, locality, country) VALUES
+('John', 'Doe', 'john.doe@email.com', '+1234567890', 'Main Street', '123', '12345', 'New York', 'USA'),
+('Jane', 'Smith', 'jane.smith@email.com', '+1234567891', 'Oak Avenue', '456', '12346', 'Los Angeles', 'USA'),
+('Mike', 'Johnson', 'mike.johnson@email.com', '+1234567892', 'Pine Road', '789', '12347', 'Chicago', 'USA'),
+('Sarah', 'Wilson', 'sarah.wilson@email.com', '+1234567893', 'Elm Street', '321', '12348', 'Houston', 'USA'),
+('David', 'Brown', 'david.brown@email.com', '+1234567894', 'Maple Drive', '654', '12349', 'Phoenix', 'USA');
+"
+
+# Add users
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users;
+INSERT INTO users (user_name, user_password, active, user_details_id, role_id) VALUES
+('johndoe', 'password123', 1, 1, 1),
+('janesmith', 'password123', 1, 2, 1),
+('mikejohnson', 'password123', 1, 3, 1),
+('sarahwilson', 'password123', 1, 4, 2),
+('davidbrown', 'password123', 1, 5, 3);
+"
+```
+
+#### Step 2: Populate Products Database
+```bash
+# Add diverse product catalog
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE products;
+INSERT INTO products (product_name, price, discription, category, availability) VALUES
+('MacBook Pro 16', 2499.99, 'High-performance laptop with M2 chip', 'Electronics', 15),
+('iPhone 15 Pro', 999.99, 'Latest smartphone with advanced camera', 'Electronics', 25),
+('Samsung Galaxy S24', 899.99, 'Android flagship with AI features', 'Electronics', 20),
+('iPad Air', 599.99, 'Versatile tablet for work and creativity', 'Electronics', 30),
+('AirPods Pro', 249.99, 'Wireless earbuds with noise cancellation', 'Electronics', 50),
+('Nike Air Max 270', 150.00, 'Comfortable running shoes', 'Clothing', 40),
+('Levis 501 Jeans', 89.99, 'Classic straight-fit denim jeans', 'Clothing', 35),
+('Adidas Hoodie', 65.00, 'Comfortable cotton blend hoodie', 'Clothing', 25),
+('Dyson V15 Vacuum', 749.99, 'Powerful cordless vacuum cleaner', 'Home & Garden', 12),
+('Clean Code Book', 42.99, 'A handbook of agile software craftsmanship', 'Books', 85);
+"
+```
+
+#### Step 3: Populate Recommendations Database (Critical!)
+```bash
+# Add simplified users for recommendations service
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations;
+INSERT INTO users (user_name) VALUES
+('johndoe'), ('janesmith'), ('mikejohnson'), ('sarahwilson'), ('davidbrown');
+"
+
+# Add simplified products for recommendations service
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations;
+INSERT INTO products (product_name) VALUES
+('MacBook Pro 16'), ('iPhone 15 Pro'), ('Samsung Galaxy S24'), ('iPad Air'), ('AirPods Pro'),
+('Nike Air Max 270'), ('Levis 501 Jeans'), ('Adidas Hoodie'), ('Dyson V15 Vacuum'), ('Clean Code Book');
+"
+
+# Add recommendation ratings (user interaction history)
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations;
+INSERT INTO recommendation (rating, product_id, user_id) VALUES
+(5, 1, 1), (4, 2, 1), (4, 4, 1), (5, 5, 1),
+(5, 6, 2), (4, 7, 2), (5, 8, 2), (4, 9, 2),
+(5, 9, 3), (4, 10, 3), (5, 1, 3),
+(5, 10, 4), (4, 1, 4), (3, 5, 4),
+(4, 1, 5), (3, 6, 5), (4, 9, 5), (5, 10, 5);
+"
+```
+
+#### Step 4: Verify Data Population
+```bash
+# Check users database
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE users; SELECT COUNT(*) as user_count FROM users;
+"
+
+# Check products database
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE products; SELECT COUNT(*) as product_count FROM products;
+"
+
+# Check recommendations database
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Test1234!" -C -Q "
+USE recommendations; SELECT COUNT(*) as recommendation_count FROM recommendation;
+"
+```
+
+## 🎯 Product Recommendation Service Testing
+
+### Test Direct Service Access (Port 8812)
+```bash
+# Test MacBook Pro recommendations
+curl "http://localhost:8812/recommendations?name=MacBook%20Pro%2016"
+# Expected: JSON array with 4 user recommendations and ratings
+
+# Test iPhone recommendations  
+curl "http://localhost:8812/recommendations?name=iPhone%2015%20Pro"
+# Expected: JSON array with 1 user recommendation
+
+# Test product with no recommendations
+curl "http://localhost:8812/recommendations?name=NonExistentProduct"
+# Expected: Empty JSON array []
+```
+
+### Test API Gateway Routing (Port 8900)
+```bash
+# Test via API Gateway
+curl "http://localhost:8900/api/review/recommendations?name=MacBook%20Pro%2016"
+# Expected: Same results as direct access (perfect routing)
+
+# Test different products via gateway
+curl "http://localhost:8900/api/review/recommendations?name=Clean%20Code%20Book"
+curl "http://localhost:8900/api/review/recommendations?name=Dyson%20V15%20Vacuum"
+```
+
+### Expected Recommendation Response Format
+```json
+[
+  {
+    "id": 1,
+    "rating": 5,
+    "product": {"productName": "MacBook Pro 16"},
+    "user": {"userName": "johndoe"}
+  },
+  {
+    "id": 11,
+    "rating": 5,
+    "product": {"productName": "MacBook Pro 16"},
+    "user": {"userName": "mikejohnson"}
+  }
+]
+```
+
 ## 🧪 API Testing & Verification
 
 Test all endpoints after setup:
