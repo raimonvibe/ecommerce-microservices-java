@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
+@RequestMapping("/")
 public class RecommendationController {
 
     @Autowired
@@ -30,7 +31,7 @@ public class RecommendationController {
     private HeaderGenerator headerGenerator;
 
     @GetMapping(value = "/recommendations")
-    private ResponseEntity<List<Recommendation>> getAllRating(@RequestParam("name") String productName){
+    public ResponseEntity<List<Recommendation>> getAllRating(@RequestParam("name") String productName){
         List<Recommendation> recommendations = recommendationService.getAllRecommendationByProductName(productName);
         if(!recommendations.isEmpty()) {
         	return new ResponseEntity<List<Recommendation>>(
@@ -44,7 +45,7 @@ public class RecommendationController {
     }
     
     @PostMapping(value = "/{userId}/recommendations/{productId}")
-    private ResponseEntity<Recommendation> saveRecommendations(
+    public ResponseEntity<Recommendation> saveRecommendations(
             @PathVariable ("userId") Long userId,
             @PathVariable ("productId") Long productId,
             @RequestParam ("rating") int rating,
@@ -77,7 +78,7 @@ public class RecommendationController {
     }
 
     @DeleteMapping(value = "/recommendations/{id}")
-    private ResponseEntity<Void> deleteRecommendations(@PathVariable("id") Long id){
+    public ResponseEntity<Void> deleteRecommendations(@PathVariable("id") Long id){
     	Recommendation recommendation = recommendationService.getRecommendationById(id);
     	if(recommendation != null) {
     		try {
