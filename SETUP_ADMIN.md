@@ -1,5 +1,7 @@
 # Admin Interface Setup Guide
 
+![Admin Panel Screenshot](admin.png)
+
 ## Overview
 
 This guide provides comprehensive instructions for setting up and using the dark mode admin interface for the RainbowForest E-commerce microservices platform. The admin interface provides management capabilities for Users, Products, Orders, and Recommendations.
